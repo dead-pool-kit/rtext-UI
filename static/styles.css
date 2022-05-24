@@ -1,0 +1,70 @@
+body {
+    margin: 0;
+    width: 100vw;
+    height: 100vh;  
+}
+
+table, th, td {
+    border: 2px solid teal;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+
+/* text {
+    text-anchor: middle;
+    font: 10px sans-serif;
+    pointer-events: none;
+    opacity: 0;
+} */
+
+circle {
+    cursor: pointer;
+}
+
+img {
+    width: 200px;
+}
+
+a {
+    color: #FFF;
+    font-weight: bold;
+    display: block;
+}
+
+span {
+    display: inline-block;
+    margin-top: 5px;
+    padding: 2px 10px;
+    border-radius: 2px;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.html { background: #F16529; }
+.css  { background: #1C88C7; }
+.js   { background: #FCC700; }
+
+.tooltip {
+    position: absolute;
+    visibility: hidden;
+    background-color: #F8F8FF;
+    display: flex;
+    font-family: sans-serif;
+    max-width: 300px;
+    color: #006400;
+    max-height: 300px;
+
+
+}
+
+.tooltip div {
+    padding: 10px;
+}
+
+datalist {
+    /* margin-left: 200px; */
+    display: flex;
+    justify-content: space-between;
+    color: red;
+    width: 70%;
+  }

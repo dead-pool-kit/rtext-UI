@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>💭Word Embeddings</title>
+
+    <link rel="stylesheet" href="static/styles.css" />
+    <script src="https://d3js.org/d3.v6.js"></script>
+    <!-- <script src="https://unpkg.com/d3-simple-slider"></script> -->
+    <!-- <script src="https://requirejs.org/docs/release/2.3.5/minified/require.js"></script> -->
+    <!-- <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous"> -->
+
+    <!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script> -->
+
+    <!-- <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script> -->
+    <script src="static/wordEmb.js"></script>
+</head>
+
+<!-- <div id="binHist">
+    <p style="margin-left: 250px; font-weight: 100;">
+      <label style="font-size:x-large; float: center;  margin-right: 10px;">Select no. of PCA components</label>
+      <input type="number" min="1" max="22" step="1" value="1" id="npca" style="font-size:x-large; height: 50px; width: 70px;">
+    </p> 
+  </div> -->
+  <div class='row' style="float: left; display: flex;">
+    <div id="clusters" style="margin-left: 20px;">
+      <p style="font-weight: 100; margin-right: 100px;">
+        <label style="font-size:x-large; float: center;  margin-right: 10px; font-weight: 400;">No. of Clusters</label>
+        <input type="range" min="1" max="10" step="1" value="3" id="clusterSt" list="tickmarks2" style="font-size:x-large; height: 10px; width: 300px;">
+        <datalist id="tickmarks2">
+          <option value="1" label="1"></option>
+          <option value="2"></option>
+          <option value="3"></option>
+          <option value="4"></option>
+          <option value="5" label="5"></option>
+          <option value="6"></option>
+          <option value="7"></option>
+          <option value="8"></option>
+          <option value="9"></option>
+          <option value="10" label="10"></option>
+        </datalist>
+      </p> 
+    </div>
+
+  <!-- <div id="sampleSz" class="range-slider grad" style='margin-left: 500px; --min:0; --max:10000; --step:100; --value:200; --text-value:"200"; --prefix:"$"'></div> -->
+  <div id="sampleSz" style="margin-left: 100px;">
+    <p style="font-weight: 100; margin-right: 100px;">
+      <label style="font-size:x-large; float: center;  margin-right: 10px; font-weight: 400;">No. of Freq Words</label>
+      <input type="range" min="10" max="300" step="10" value="50" id="sampsz" list="tickmarks" style="font-size:x-large; height: 10px; width: 400px;">
+      <datalist id="tickmarks">
+        <option value="0" label="0"></option>
+        <option value="10"></option>
+        <option value="20"></option>
+        <option value="30"></option>
+        <option value="40"></option>
+        <option value="50" label="50"></option>
+        <option value="60"></option>
+        <option value="70"></option>
+        <option value="80"></option>
+        <option value="90"></option>
+        <option value="100" label="100"></option>
+        <option value="110"></option>
+        <option value="120"></option>
+        <option value="130"></option>
+        <option value="140"></option>
+        <option value="150" label="150"></option>
+        <option value="160"></option>
+        <option value="170"></option>
+        <option value="180"></option>
+        <option value="190"></option>
+        <option value="200" label="200"></option>
+        <option value="210"></option>
+        <option value="220"></option>
+        <option value="230"></option>
+        <option value="240"></option>
+        <option value="250" label="250"></option>
+        <option value="260"></option>
+        <option value="270"></option>
+        <option value="280"></option>
+        <option value="290"></option>
+        <option value="300" label="300"></option>
+      </datalist>
+    </p> 
+  </div>
+  <div style="float:right; margin-top: 17px;">
+    <form id="form">
+      <input type="text" placeholder="Search A Word..." name="search" id="query" style="height: 30px; width:250px;">
+      <button style="height: 30px; width:100px; margin-right: 50px;" onclick='handleSearch(event);'>Search</button>
+    </form>
+  </div>
+</div>
+<svg id="scttr" width="1400" height="550" font-family="sans-serif" font-size="10" text-anchor="middle"></svg>
+<div class="tooltip">
+    <!-- <img alt="" /> -->
+    <p></p>
+</div>
+<div class="tooltip2" style="margin-top: -20px;"></div>
+<script src="https://d3js.org/d3.v6.js"></script>
+<!-- <script src="https://unpkg.com/d3-simple-slider"></script> -->
+<!-- <script src="https://requirejs.org/docs/release/2.3.5/minified/require.js"></script> -->
+<!-- <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous"> -->
+
+<!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script> -->
+
+<!-- <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script> -->
+<script src="static/wordEmb.js"></script>
+<script>
+  var margins = { top: 50, bottom: 60, left: 60, right: 50 }
+
+  var svg = d3.select('svg')
+  var width = +svg.attr("width")
+  
+  var height = +svg.attr("height");
+
+  console.log('wid: '+ width);
+  console.log('hei: '+ height);
+</script>
+<html>
