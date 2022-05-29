@@ -30,7 +30,7 @@ squared_loadings = []
 
 best_columns = []
 
-cluster_count = 10
+cluster_count = 3
 sampSz = 50
 
 mds =  MDS(n_components=2)
@@ -120,6 +120,7 @@ def get_hils_data():
         
         if 'clusterCnt' in request.get_json():
             cluster_count =  int(request.get_json()['clusterCnt'])
+        
 
     top_attr_data = data[:sampSz]
     kmeans = KMeans(n_clusters=cluster_count, random_state=0)\

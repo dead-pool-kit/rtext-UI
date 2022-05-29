@@ -1,7 +1,7 @@
 
 var ss= 50
 var margins = { top: 50, bottom: 60, left: 60, right: 50 }
-
+var clusterCnt= 3
 var dataOG
 
 fetch('/hils', {
@@ -9,7 +9,7 @@ fetch('/hils', {
     headers: {
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify({sampSz: ss})
+    body: JSON.stringify({'sampSz': ss, 'clusterCnt':clusterCnt})
   })
   .then(function (response) {
       return response.json();
@@ -40,7 +40,26 @@ d3.select("#sampsz").on("input", function() {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({sampSz: ss})
+        body: JSON.stringify({'sampSz': ss, 'clusterCnt':clusterCnt})
+      })
+      .then(function (response) {
+          return response.json();
+      }).then(function (data) {
+        plot_mds_euc(data)
+      });
+})
+
+
+
+d3.select("#clusterSt").on("input", function() {
+    clusterCnt = +this.value;
+    console.log('---------Cluster cnt: ', clusterCnt)
+    fetch('/hils', {
+        method: "POST",
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({'sampSz': ss, 'clusterCnt':clusterCnt})
       })
       .then(function (response) {
           return response.json();
@@ -135,23 +154,6 @@ function searchHelper(dataOg, ev){
 }
 
 function plot_mds_euc(mds_euc_data){
-
-    // console.log(width+ ' :width-height:  '+height)
-    // mds_euc_data.sort(function(a,b){
-
-    //     if(+a['word_data.n'] > +b['word_data.n'])
-    //         return -1;
-    //     else
-    //         return 1;
-
-    // })
-    // mds_euc_data = heapq.nlargest(100, mds_euc_data, key=operator.itemgetter(9))
-
-    // nEle = d3.select("#sampsz").node().value
-    // mds_euc_data = mds_euc_data.slice(0, nEle)
-    // console.log('no. of eles: '+ nEle)
-
-
     
     svg.selectAll('circles').remove()
     svg.selectAll('text').remove()
@@ -242,20 +244,20 @@ function plot_mds_euc(mds_euc_data){
 
 
 
-    var points = plotInner.selectAll("circles")
-        .data(mds_euc_data)
-        .enter()
-        .append("circle")
-        // .merge(points) // get the already existing elements as well
-        .attr("class", "point")
-        .attr("cx", function(d) { return xScale(+d['word_data.dot.x']); })
-        .attr("cy", function(d) { return yScale(+d['word_data.dot.y']); })
-        .attr("r", "1")
-        // .attr("fill", "blue")
-        .style("fill", "pink")
+    // var points = plotInner.selectAll("circles")
+    //     .data(mds_euc_data)
+    //     .enter()
+    //     .append("circle")
+    //     // .merge(points) // get the already existing elements as well
+    //     .attr("class", "point")
+    //     .attr("cx", function(d) { return xScale(+d['word_data.dot.x']); })
+    //     .attr("cy", function(d) { return yScale(+d['word_data.dot.y']); })
+    //     .attr("r", "1")
+    //     // .attr("fill", "blue")
+    //     .style("fill", "pink")
 
-        points.exit()
-      .remove()
+    //     points.exit()
+    //   .remove()
 
 
     var txt = plotInner.selectAll("text")
@@ -269,6 +271,7 @@ function plot_mds_euc(mds_euc_data){
         // .duration(1000)
         .attr("class","wordText")
         .text(function(d){ return d['word_data.words']; })
+        .style("font-size", function(d) { return radScale(+d['word_data.n']); })
         .attr("x", function(d) {  return xScale(+d['word_data.dot.x']); })
         .attr("y", function(d) { return yScale(+d['word_data.dot.y']); })
         // .attr("transform", "rotate(-45)")
@@ -277,7 +280,6 @@ function plot_mds_euc(mds_euc_data){
         .style("fill",  function(d) { return color(+d['class']); })
         .attr("opacity", function(d) { return (1/(+d['word_data.n']))* currMin})
         // .attr("text-overflow", "ellipsis")
-        .style("font-size", function(d) { return radScale(+d['word_data.n']); })
         .on("mouseover", function(e, d) {
             d3.select(this)
             .style("fill", "red")
@@ -289,7 +291,7 @@ function plot_mds_euc(mds_euc_data){
             // .attr('src',  "https://picsum.photos/id/163/2000/1333");
 
             tooltip.select('p')
-            .text("Commonly used words are larger and slightly faded in color. Less common words are smaller and darker.")
+            .text(`I am very ${d["word_data.words"]} after finding out everything that happend afterwards!`)
             // .style("color", "#2F4F4F")
 
             // .html('<u>' + d.key + '</u>' + "<br>" + d.value + " inhabitants")
@@ -337,24 +339,26 @@ function plot_mds_euc(mds_euc_data){
     grpEnter.merge(groups).attr('transform', (d,i)=> `translate(${70},${i*60})`);
     groups.exit().remove();
 
-    grpEnter.append('circle').merge(groups.select('circle'))
-    .attr('r', szScale)
+    grpEnter.append('text')
+    .merge(groups.select('text'))
+    .text("A")
+    .attr('font-size', d=> szScale(d)+15)
     .attr('fill', circlefill)
 
 
     grpEnter.append('text').merge(groups.select('text'))
     .text(d =>d)
-    .attr('dy', '0.32em')
+    .attr('dy', '0.30em')
     .attr("font-size", "17px")
     .attr('x', d=> szScale(d)+15)
 
     // Add legend label:
     plotInner.append("text")
     .attr("text-anchor", "end")
-    .attr("class", "xlabel")
+    .attr("class", "legendlabel")
     .attr("font-size", "17px")
     .attr("y", height/2 - 45)
-    .attr("x",  110)
+    .attr("x",  130)
     .text("Frequency");
 }
 
