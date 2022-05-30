@@ -4,18 +4,37 @@ var margins = { top: 50, bottom: 60, left: 60, right: 50 }
 var clusterCnt= 3
 var dataOG
 
-fetch('/hils', {
-    method: "POST",
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({'sampSz': ss, 'clusterCnt':clusterCnt})
-  })
-  .then(function (response) {
-      return response.json();
-  }).then(function (data) {
-    plot_mds_euc(data)
-  });
+var sizeField, xAxis, yAxis, wordsField
+
+
+fetch('/fields')
+.then(function (response) {
+    return response.json();
+}).then(function (dataFields) {
+
+    setFields(dataFields)
+    fetch('/hils', {
+        method: "POST",
+        headers: {
+        'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({'sampSz': ss, 'clusterCnt':clusterCnt})
+    })
+    .then(function (response2) {
+        return response2.json();
+    }).then(function (dataPlots) {
+        plot_mds_euc(dataPlots)
+    });
+});
+
+
+function setFields(dataFields){
+    sizeField = dataFields['sizeField']
+    xAxis = dataFields['xAxis']
+    yAxis = dataFields['yAxis']
+    wordsField = dataFields['wordsField']
+}
+
 
 
   fetch('/data/all')
@@ -27,20 +46,20 @@ fetch('/hils', {
   
 
     
-var plotInner, xScale, yScale, radScale, color, colorss, tooltip, tooltip2, Tooltiptable
+var plotInner, xScale, yScale, radScale, color, colorss, tooltip, tooltip2, Tooltiptable, currMin
 
 
 // var format = d3.format(",d");
 
 d3.select("#sampsz").on("input", function() {
     ss = +this.value;
-    console.log('---------Inside step functn', ss)
+    // console.log('---------Inside step functn', ss)
     fetch('/hils', {
         method: "POST",
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({'sampSz': ss, 'clusterCnt':clusterCnt})
+        body: JSON.stringify({'sampSz': ss, 'clusterCnt': clusterCnt})
       })
       .then(function (response) {
           return response.json();
@@ -59,7 +78,7 @@ d3.select("#clusterSt").on("input", function() {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({'sampSz': ss, 'clusterCnt':clusterCnt})
+        body: JSON.stringify({'sampSz': ss, 'clusterCnt': clusterCnt})
       })
       .then(function (response) {
           return response.json();
@@ -78,15 +97,14 @@ function searchHelper(dataOg, ev){
 
     // debugger;
     ev.preventDefault();
-    valOfInput = d3.select("#query").node().value
-    console.log('cb: '+ valOfInput);
-    
 
-    var res = dataOg.filter(item => item['word_data.words'].toLowerCase() === valOfInput.toLowerCase())
+    valOfInput = d3.select("#query").node().value
+    // console.log('cb: '+ valOfInput);
+    
+    var res = dataOg.filter(item => item[wordsField].toLowerCase() === valOfInput.toLowerCase())
     if(Object.keys(res).length === 0)
         alert(`The word mapping for ${valOfInput} is not present`)
-    else{
-
+    else {
         // alert(JSON.stringify(res))
         plotInner.selectAll("circles")
         .data(res)
@@ -95,12 +113,11 @@ function searchHelper(dataOg, ev){
         // .merge(txt) // get the already existing elements as well
         // .transition() // and apply changes to all of them
         // .duration(1000)
-        .text(function(d){ return d['word_data.words']; })
-        .attr("x", function(d) { return xScale(+d['word_data.dot.x']); })
-        .attr("y", function(d) { return yScale(+d['word_data.dot.y']); })
+        .text(function(d){ return d[wordsField]; })
+        .attr("x", function(d) { return xScale(+d[xAxis]); })
+        .attr("y", function(d) { return yScale(+d[yAxis]); })
         .style("fill",  "purple" )
-        // .attr("text-overflow", "ellipsis")
-        .style("font-size", function(d) { return radScale(+d['word_data.n']); })
+        .style("font-size", function(d) { return radScale(+d[sizeField]); })
         .on("mouseover", function(e, d) {
             d3.select(this)
             .style("fill", "red")
@@ -134,10 +151,10 @@ function searchHelper(dataOg, ev){
 
             // tooltip2.style("opacity", 0)
             d3.select(this)
-            .style("fill",  function(d) { return colorss(+d['word_data.n']); })
-            .style("font-size", function(d) { return radScale(+d['word_data.n']); })
+            .style("fill",  function(d) { return colorss(+d[sizeField]); })
+            .style("font-size", function(d) { return radScale(+d[sizeField]); })
             .style('stroke', 'none')
-            .attr("opacity", function(d) { return (1/(+d['word_data.n']))* currMin})
+            .attr("opacity", function(d) { return (1/(+d[sizeField]))* currMin})
             // .style("fill", function(d) { return color(d.cluster); })
             return tooltip.style('visibility', 'hidden');
 
@@ -160,16 +177,12 @@ function plot_mds_euc(mds_euc_data){
     d3.select(".tooltip2").selectAll("*").remove()
     d3.select("svg").selectAll("*").remove()
 
-
-
     // if(reset == true){
     //     d3.select(".tooltip2").selectAll("*").remove()
     //     d3.select("svg").selectAll("*").remove()
     // }
 
-
-    var currMin = d3.min(mds_euc_data, function(d){ return +d['word_data.n'] })
-
+    currMin = d3.min(mds_euc_data, function(d){ return +d[sizeField] })
     tooltip = d3.select('.tooltip');
 
     tooltip2 = d3.select('.tooltip2')
@@ -193,21 +206,21 @@ function plot_mds_euc(mds_euc_data){
                 .attr('id', 'inner-plot')
                 .attr('transform', 'translate(' + margins.left + ',' + margins.top + ')')
 
-        xScale = d3.scaleLinear().range ([0, width]),
-        yScale = d3.scaleLinear().range ([height, 0]);
+    xScale = d3.scaleLinear().range ([0, width]),
+    yScale = d3.scaleLinear().range ([height, 0]);
 
     radScale = d3.scaleLinear().range([10, 70])
-    .domain([d3.min(mds_euc_data, function(d){ return +d['word_data.n'] }), d3.max(mds_euc_data, function(d){ return +d['word_data.n'] })]);
+    .domain([d3.min(mds_euc_data, function(d){ return +d[sizeField] }), d3.max(mds_euc_data, function(d){ return +d[sizeField] })]);
 
 
     colorss = d3.scaleLinear()
             .domain([0, 2, 4, 5, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26])
-            .range(["#000","#111","#222", "#333", "#444", "#555", "#666", "#777", "#888", "#999", "#aaa", "#bbb", "#ccc", "#ddd", "#eee"]);
+            .range(["#000", "#111", "#222", "#333", "#444", "#555", "#666", "#777", "#888", "#999", "#aaa", "#bbb", "#ccc", "#ddd", "#eee"]);
     
     color = d3.scaleOrdinal(d3.schemeCategory10);
 
-    xScale.domain([d3.min(mds_euc_data, function(d){ return +d['word_data.dot.x'] }), d3.max(mds_euc_data, function(d){ return +d['word_data.dot.x'] })]);
-    yScale.domain([d3.min(mds_euc_data, function(d){ return +d['word_data.dot.y'] }), d3.max(mds_euc_data, function(d){ return +d['word_data.dot.y'] })]);
+    xScale.domain([d3.min(mds_euc_data, function(d){ return +d[xAxis] }), d3.max(mds_euc_data, function(d){ return +d[xAxis] })]);
+    yScale.domain([d3.min(mds_euc_data, function(d){ return +d[yAxis] }), d3.max(mds_euc_data, function(d){ return +d[yAxis] })]);
 
     plotInner.append("text")
         .attr("x", width/2 - margins.right - 40)
@@ -226,22 +239,21 @@ function plot_mds_euc(mds_euc_data){
         .attr("y", height + margins.top - 60 )
         .text("Low vs High HILS Score");
 
-        // Add Y axis label:
+    // Add Y axis label:
     plotInner.append("text")
-    .attr("text-anchor", "end")
-    .attr("class", "ylabel")
-    .attr("font-size", "25px")
-    .attr("transform", "rotate(-90)")
-    .attr("y", -margins.left+50)
-    .attr("x",  10 )
-    .text("Low vs High SWLS Score");
+        .attr("text-anchor", "end")
+        .attr("class", "ylabel")
+        .attr("font-size", "25px")
+        .attr("transform", "rotate(-90)")
+        .attr("y", -margins.left+50)
+        .attr("x",  10 )
+        .text("Low vs High SWLS Score");
 
-    var szScale= d3.scaleSqrt().range([10, 50])
-    .domain([d3.min(mds_euc_data, function(d){ return +d['word_data.n'] }), d3.max(mds_euc_data, function(d){ return +d['word_data.n'] })]);
+    var szScale= d3.scaleSqrt().range([10, 70])
+    .domain([d3.min(mds_euc_data, function(d){ return +d[sizeField] }), d3.max(mds_euc_data, function(d){ return +d[sizeField] })]);
 
     var ticks = szScale.ticks(5).filter(d => d !==0).reverse()
     var circlefill= 'rgb(0,0,0,0.5)'
-
 
 
     // var points = plotInner.selectAll("circles")
@@ -270,22 +282,23 @@ function plot_mds_euc(mds_euc_data){
         // .transition() // and apply changes to all of them
         // .duration(1000)
         .attr("class","wordText")
-        .text(function(d){ return d['word_data.words']; })
-        .style("font-size", function(d) { return radScale(+d['word_data.n']); })
-        .attr("x", function(d) {  return xScale(+d['word_data.dot.x']); })
-        .attr("y", function(d) { return yScale(+d['word_data.dot.y']); })
+        .text(function(d){ return d[wordsField]; })
+        .style("font-size", function(d) { return radScale(+d[sizeField]); })
+        .attr("x", function(d) {  return xScale(+d[xAxis]); })
+        .attr("y", function(d) { return yScale(+d[yAxis]); })
         // .attr("transform", "rotate(-45)")
 
         // .attr("transform",  "rotate(30)")
         .style("fill",  function(d) { return color(+d['class']); })
-        .attr("opacity", function(d) { return (1/(+d['word_data.n']))* currMin})
+        .attr("opacity", function(d) { return (1/(+d[sizeField]))* currMin})
         // .attr("text-overflow", "ellipsis")
         .on("mouseover", function(e, d) {
             d3.select(this)
             .style("fill", "red")
             .attr("opacity", 1)
+            .style('stroke', '#222')
+            .style("font-size", function(d) { return radScale(+d[sizeField]) +5; })
 
-            d3.select(this).style('stroke', '#222');
 
             // tooltip.select('img')
             // .attr('src',  "https://picsum.photos/id/163/2000/1333");
@@ -306,14 +319,14 @@ function plot_mds_euc(mds_euc_data){
         })
         .on('mousemove', e => tooltip.style('top', `${e.pageY}px`)
                                             .style('left', `${e.pageX + 10}px`))
-        .on("mouseout", function(d){
+        .on("mouseout", function(d2){
 
             // tooltip2.style("opacity", 0)
             d3.select(this)
             .style("fill",  function(d) { return color(+d['class']); })
-            .style("font-size", function(d) { return radScale(+d['word_data.n']); })
+            .style("font-size", function(d) { return radScale(+d[sizeField]); })
             .style('stroke', 'none')
-            .attr("opacity", function(d) { return (1/(+d['word_data.n']))* currMin})
+            .attr("opacity", function(d) { return (1/(+d[sizeField]))* currMin})
 
             // .style("fill", function(d) { return color(d.cluster); })
             return tooltip.style('visibility', 'hidden');
@@ -331,40 +344,40 @@ function plot_mds_euc(mds_euc_data){
         txt.transition()
         .duration(1000)
 
-    update_wordEmb(mds_euc_data)
+   update_wordEmb(mds_euc_data)
 
     var groups = plotInner.selectAll('g').data(ticks);
     var grpEnter = groups.enter().append('g')
     
-    grpEnter.merge(groups).attr('transform', (d,i)=> `translate(${70},${i*60})`);
+    grpEnter.merge(groups).attr('transform', (d,i)=> `translate(${70},${i*40})`);
     groups.exit().remove();
 
     grpEnter.append('text')
     .merge(groups.select('text'))
     .text("A")
-    .attr('font-size', d=> szScale(d)+15)
+    .attr('font-size', d=> szScale(d))
     .attr('fill', circlefill)
 
 
     grpEnter.append('text').merge(groups.select('text'))
     .text(d =>d)
-    .attr('dy', '0.30em')
+    .attr('dy', '-0.10em')
     .attr("font-size", "17px")
-    .attr('x', d=> szScale(d)+15)
+    .attr('x', d=> szScale(d)+10)
 
     // Add legend label:
     plotInner.append("text")
     .attr("text-anchor", "end")
     .attr("class", "legendlabel")
     .attr("font-size", "17px")
-    .attr("y", height/2 - 45)
+    .attr("y", height/2 - 105)
     .attr("x",  130)
     .text("Frequency");
 }
 
 
 function update_wordEmb(data){
-    var currMin = d3.min(data, function(d){ return +d['word_data.n'] })
+    currMin = d3.min(data, function(d){ return +d[sizeField] })
 
     // radScale = d3.scaleLinear().range([10, 70])
     // .domain([d3.min(data, function(d){ return +d['word_data.n'] }), d3.max(data, function(d){ return +d['word_data.n'] })]);
@@ -383,16 +396,19 @@ function update_wordEmb(data){
         // .merge(txt)
         // .transition() // and apply changes to all of them
         // .duration(1000)
-        .text(function(d){ return d['word_data.words']; })
-        .attr("x", function(d) {  return xScale(+d['word_data.dot.x']); })
-        .attr("y", function(d) { return yScale(+d['word_data.dot.y']); })
+        .text(function(d){ return d[wordsField]; })
+        .attr("x", function(d) {  return xScale(+d[xAxis]); })
+        .attr("y", function(d) { return yScale(+d[yAxis]); })
         // .attr("transform", "rotate(-45)")
 
         // .attr("transform",  "rotate(30)")
         .style("fill",  function(d) { return color(+d['class']); })
-        .attr("opacity", function(d) { return (1/(+d['word_data.n']))* currMin})
+        .attr("opacity", function(d) { return (1/(+d[sizeField]))* currMin})
         // .attr("text-overflow", "ellipsis")
-        .style("font-size", function(d) { return radScale(+d['word_data.n']); })
+        .style("font-size", function(d) { 
+            // console.log(d);
+            return radScale(+d[sizeField]); 
+        })
 
 }
 

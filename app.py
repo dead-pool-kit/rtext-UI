@@ -17,9 +17,14 @@ import sys
 
 
 app = Flask(__name__)
-data = pd.read_csv("data/HILS_SWLS_100_pp.csv")
-data_original = data
-data_unscaled = data.copy()
+data=0
+data_original = 0
+data_unscaled = 0
+
+sizeField= 0
+xAxis = 0
+yAxis=0 
+wordsField=0
 
 sampleSize = 500
 
@@ -37,9 +42,21 @@ mds =  MDS(n_components=2)
 mds_fitted = None
 mds_fitted_pc = None
 
-def sort():
-    global data
-    data.sort_values(by='word_data.n',  ascending=False, inplace=True)
+def sort(plotFileName, sizeF, xAxisF, yAxisF, wordsF): 
+    global data, data_original, data_unscaled, sizeField, xAxis, yAxis, wordsField
+
+    # data = pd.read_csv("data/HILS_SWLS_100_pp.csv")
+    data = pd.read_csv(plotFileName)
+    data_original = data
+    data_unscaled = data.copy()
+
+
+    sizeField= sizeF
+    xAxis = xAxisF
+    yAxis= yAxisF
+    wordsField= wordsF
+
+    data.sort_values(by=sizeF,  ascending=False, inplace=True)
   
 
 def preprocess():
@@ -114,7 +131,6 @@ def get_pcp():
 def get_hils_data():
     global cluster_count, data_original, sampSz, data
     
-    print(request.get_json())
     if(request.method == 'POST'):
         sampSz = int(request.get_json()['sampSz'])
         
@@ -143,6 +159,18 @@ def get_hils_all():
     return json.dumps(tmp)
 
 
+@app.route("/fields", methods=["GET"])
+def get_all_fields():
+    global sizeField, xAxis, yAxis, wordsField
+    tmp = {}
+    tmp['sizeField']= sizeField
+    tmp['xAxis']= xAxis
+    tmp['yAxis']= yAxis
+    tmp['wordsField']= wordsField
+
+    return json.dumps(tmp)
+
+
 @app.route("/")
 def home():
        
@@ -157,6 +185,16 @@ def home():
 
 if(__name__ == "__main__"):
     # preprocess() 
-    sort()   
+
+    plotFileName = sys.argv[1]
+    xAxisF = sys.argv[2]
+    yAxisF = sys.argv[3]
+    wordsF = sys.argv[4]
+    sizeF = sys.argv[5]
+
+
+    sort(plotFileName, sizeF, xAxisF, yAxisF, wordsF)   
+    
+
     app.config['TEMPLATES_AUTO_RELOAD'] = True
     app.run(port=8005, debug=True)
